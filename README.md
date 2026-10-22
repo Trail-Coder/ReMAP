@@ -22,7 +22,7 @@ Experiments show that ReMAP achieves state-of-the-art attack performance across 
 
 
 
-> **Research-use notice.** This code is intended for controlled security evaluation, defensive research, and reproducibility studies. Do not deploy the attack components against systems or data for which you do not have explicit authorization.
+> **Research-use notice.** This code is intended for controlled security evaluation, defensive research, and reproducibility studies. Do not deploy the attack components against systems or data for which you do not have explicit authorization. The current release contains the core implementation of ReMAP; the complete codebase will be released upon acceptance.
 
 
 
