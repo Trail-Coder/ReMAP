@@ -6,31 +6,23 @@
 
 
 
-ReMAP is a modular research framework for studying indirect prompt injection and long-term memory poisoning in tool-using LLM agents. The implementation focuses on a relation-deferred attack construction: instead of placing a complete malicious policy in one document, the attack produces independently plausible evidence records whose semantic relation is induced only when the records are jointly processed during memory construction.
+Large language model agents rely on memory to retain historical knowledge.
+Behavioral memories can be abstracted as the schema comprising decision scenarios, executable actions, and relations between them, enabling agents to reuse prior experience.
+Yet this capability introduces poisoning risks where attackers inject malicious content into external sources, causing agents to form harmful memories.
+Existing defenses typically screen external inputs before ingestion and block attacks with explicit malicious intent.
+However, memory construction summarizes across multiple records, potentially creating new relations absent from any individual input.
+We find that malicious behavior can arise from an improper scenario-action association even when both components may themselves seem benign.
+Motivated by this gap, we propose **Re**lational **M**emory **A**ttack via Anchored **P**oisoning (ReMAP), a stealthy attack targeting the memory construction.
+ReMAP injects only the benign scenario and action evidence derived from a target malicious schema, while withholding the harmful relation between them.
+After evidence passes screening, ReMAP induces the agent to establish the harmful relation during memory construction.
+To promote target-relation formation, we insert a shared anchor into both evidence items and apply cross-evidence attention to guide iterative optimization with beam search.
+The evidence exploits entity coreference and functional complementarity, enabling the agent to link two items during memory construction.
+Experiments show that ReMAP achieves state-of-the-art attack performance across multiple benchmarks under several defenses, revealing systematic limitations of input-level defenses.
 
-
-
-The repository is organized as an extensible attack--defense--agent--dataset evaluation pipeline. Each component is discovered dynamically, so new attacks, defenses, agents, scorers, and datasets can be added without rewriting the experiment orchestration layer.
 
 
 
 > **Research-use notice.** This code is intended for controlled security evaluation, defensive research, and reproducibility studies. Do not deploy the attack components against systems or data for which you do not have explicit authorization.
-
-
-
-## Current repository scope
-
-
-
-Due to the size limitation of Code and Data Supplement, the working copy has been deliberately reduced to the Memory Injection evaluation path. The active dataset registry contains one dataset:
-
-
-
-- **Memory Injection** — the released document/query/goal benchmark used by the ReMAP memory-poisoning evaluation.
-
-
-
-Other benchmark families (agent, non-English, smoke, and auxiliary ablations) and their generic loaders have been removed to reduce repository size. The retained tree contains only the Memory Injection behavior split and its corresponding behavior-only preprocessing artifacts.
 
 
 
@@ -40,81 +32,7 @@ Other benchmark families (agent, non-English, smoke, and auxiliary ablations) an
 
 
 
-```text
-
-                         ┌──────────────────────┐
-
-                         │  Dataset loader      │
-
-                         │  Sample(document,    │
-
-                         │  query, metadata)    │
-
-                         └──────────┬───────────┘
-
-                                    │
-
-                                    ▼
-
-                         ┌──────────────────────┐
-
-                         │ Attack transformation│
-
-                         │  ReMAP: e_C + e_A    │
-
-                         └──────────┬───────────┘
-
-                                    │
-
-                                    ▼
-
-                         ┌──────────────────────┐
-
-                         │ Per-record defense   │
-
-                         │ block or clean each  │
-
-                         │ external record      │
-
-                         └──────────┬───────────┘
-
-                                    │
-
-                                    ▼
-
-       ┌──────────────────────┐   ┌──────────────────────┐
-
-       │ Scoped long-term     │──▶│ Structured Agent     │
-
-       │ memory retrieval     │   │ context construction │
-
-       └──────────────────────┘   └──────────┬───────────┘
-
-                                             │
-
-                                             ▼
-
-                                  ┌──────────────────────┐
-
-                                  │ Tool-using Agent     │
-
-                                  │ + SQLite memory write│
-
-                                  └──────────┬───────────┘
-
-                                             │
-
-                                             ▼
-
-                                  ┌──────────────────────┐
-
-                                  │ A-ASR / M-ASR / B-ASR│
-
-                                  │ scoring and reports  │
-
-                                  └──────────────────────┘
-
-```
+![ReMAP architecture overview](overview.png)
 
 
 
@@ -161,7 +79,6 @@ The main orchestration logic is implemented in [framework/runner.py](framework/r
 
 ├── tools/                          Evidence generation and semantic Judge tools
 
-├── Baselines/Sleeper_adapted/      Retained Memory Injection-related adapter
 
 ├── memory_store.py                 Scoped SQLite long-term memory
 
@@ -177,7 +94,6 @@ The main orchestration logic is implemented in [framework/runner.py](framework/r
 
 
 
-Large raw datasets, non-Memory-Injection benchmark trees, generated result files, and runtime caches are intentionally excluded from the working copy.
 
 
 
@@ -220,7 +136,6 @@ The generation path is:
 
 
 
-If external generation or the local surrogate model is unavailable, ReMAP falls back to conservative built-in evidence templates. This permits structural testing, but it is not equivalent to a full paper-scale generation run.
 
 
 
@@ -280,9 +195,6 @@ The loader supports:
 
 
 
-The current Runner does not reinterpret the dataset's goal as a new user instruction. The goal is retained as metadata and passed to the optional semantic judge as attack context.
-
-
 
 ## Long-term memory model
 
@@ -316,7 +228,6 @@ Memory behavior is scoped as follows:
 
 
 
-This implementation is intentionally simple and transparent. It is suitable for controlled ablations and pipeline verification, but it is not a production vector database or a replacement for an agent's proprietary memory subsystem.
 
 
 
@@ -327,19 +238,7 @@ This implementation is intentionally simple and transparent. It is suitable for 
 Components are discovered by [framework/registry.py](framework/registry.py).
 
 
-### Attack
 
-
-
-- `ReMAP`
-
-
-
-### Dataset
-
-
-
-- `Memory Injection`
 
 
 
@@ -391,15 +290,13 @@ The current tree contains:
 
 
 
-Some optional agents require external packages that are not part of the minimal environment. Missing optional dependencies are reported during discovery and do not necessarily prevent the remaining components from being listed.
 
 
 
 ## Environment setup
 
 
-
-The repository does not currently provide a single complete `requirements.txt` for every optional component. The minimal orchestration path requires Python 3.9+ and an HTTP client:
+The minimal orchestration path requires Python 3.9+ and an HTTP client:
 
 
 ```powershell
@@ -407,7 +304,6 @@ The repository does not currently provide a single complete `requirements.txt` f
 python -m pip install requests
 
 ```
-
 
 
 Additional packages may be needed depending on the selected components:
@@ -431,7 +327,7 @@ $env:OPENAI_API_KEY  = 'your-api-key'
 
 $env:OPENAI_BASE_URL = ''
 
-$env:OPENAI_MODEL    = 'gpt-4o'
+$env:OPENAI_MODEL    = 'your-model-name'
 
 ```
 
@@ -463,13 +359,13 @@ A minimal Memory Injection run can be launched with:
 
 python run_experiment.py `
 
-  --datasets 'Memory Injection' `
+  --datasets 'Dataset Name' `
 
   --attacks ReMAP `
 
-  --defenses 'Untrusted Markers' `
+  --defenses 'Defense Name' `
 
-  --agents 'Native ReAct' `
+  --agents 'Agent Name' `
 
   --n 10 `
 
@@ -551,8 +447,6 @@ The partial JSON is updated after each completed combination. The final JSON con
 
 
 
-These files are generated artifacts and are intentionally not part of the source distribution.
-
 
 
 ## Metrics
@@ -581,25 +475,7 @@ The default scorer uses observable tool calls and verifies that a `save_memory` 
 
 
 
-## Reproducibility and known limitations
 
-
-
-The following limitations should be considered before interpreting results:
-
-
-
-1. The upstream release omitted raw datasets because of file-size restrictions; this working copy retains only the active behavior split.
-
-2. The default runtime does not guarantee that every optional Agent dependency is installed.
-
-3. ReMAP evidence generation may fall back to built-in templates if the generation API or CAS surrogate is unavailable.
-
-4. The current SQLite retrieval implementation uses lexical overlap rather than embedding retrieval.
-
-5. Tool effects such as reference verification are simulated for evaluation; this framework is not an operational document-verification service.
-
-6. Full paper-scale experiments require compatible model endpoints, the local surrogate model, and sufficient compute/API budget.
 
 
 
@@ -627,13 +503,6 @@ Run `python -B run_experiment.py --list`. Optional Agent packages may be missing
 
 
 
-### ReMAP falls back to templates
-
-
-
-Check the API configuration and, for CAS/beam optimization, install `torch` and `transformers` and set `REMAP_SURROGATE_MODEL` to a valid local model directory.
-
-
 
 ### Results from a previous experiment are unexpectedly present
 
@@ -642,10 +511,4 @@ Check the API configuration and, for CAS/beam optimization, install `torch` and 
 The Runner regenerates `experiment_partial.json`, `experiment_results.json`, and `experiment_report.md` under `--output`. These are runtime artifacts and can be removed after archiving any required measurements.
 
 
-
-## License and attribution
-
-
-
-The repository combines project-specific orchestration code with selected baseline and defense implementations. Please consult the license files within the corresponding subdirectories before redistribution. Dataset licenses and citation requirements are governed by the original Memory Injection release and must be respected independently of this wrapper repository.
 
