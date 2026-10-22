@@ -1,0 +1,8 @@
+{
+  "_comment": "Rename this file to api.json and fill in your API credentials.",
+  "active": {
+    "base_url": "",
+    "api_key": "sk-your-api-key-here",
+    "model": "gpt-4o"
+  }
+}

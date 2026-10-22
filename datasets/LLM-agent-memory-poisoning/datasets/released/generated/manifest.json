@@ -1,0 +1,17 @@
+{
+  "source_datasets": {
+    "behaviour": "datasets\\released\\behaviour_eval_in_with_true_optimized_goals.json"
+  },
+  "generated_datasets": {
+    "behaviour": {
+      "with_memories": "datasets\\released\\generated\\behaviour_true_optimized_with_memories.json",
+      "without_memories": "datasets\\released\\generated\\behaviour_true_optimized_without_memories.json"
+    }
+  },
+  "counts": {
+    "behaviour": {
+      "with_memories": 250,
+      "without_memories": 250
+    }
+  }
+}
